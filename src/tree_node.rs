@@ -25,8 +25,7 @@ impl TreeNode {
         if nodes.insert(self.name.clone()) {
             // 如果节点是新添加的，生成节点的创建语句
             let node_statement = format!(
-                "CREATE ({}:Node {{name: '{}'}});\n",
-                self.name.replace(" ", "_"),
+                "CREATE (n:Node {{name: '{}'}});\n",
                 self.name
             );
             output.write_all(node_statement.as_bytes())?;
