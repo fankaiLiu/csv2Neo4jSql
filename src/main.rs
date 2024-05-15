@@ -8,7 +8,6 @@ fn main() {
     name,attribute,parent\n\
     root,RootAttr,\n\
     child1,Child1Attr,root\n\
-    child2,Child2Attr,root\n\
     grandchild1,GrandChild1Attr,child1\n";    
     let tree = build_tree_from_csv(data.as_bytes()).unwrap();
     dbg!(&tree);

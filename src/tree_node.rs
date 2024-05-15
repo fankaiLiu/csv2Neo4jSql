@@ -4,26 +4,15 @@ use std::{
     io::{self, Write},
 };
 
-#[derive(Debug)]
+#[derive(Debug,Clone)]
 pub struct TreeNode {
+    pub parent:Option<String>,
     pub name: String,
     pub attribute: String,
     pub children: Vec<TreeNode>,
 }
 
 impl TreeNode {
-    pub fn new(name: &str, attribute: &str) -> Self {
-        TreeNode {
-            name: name.to_string(),
-            attribute: attribute.to_string(),
-            children: Vec::new(),
-        }
-    }
-
-    pub fn add_child(&mut self, child: TreeNode) {
-        self.children.push(child);
-    }
-
     // 遍历树，收集所有节点，并生成节点和关系的创建语句
     // 修改函数签名来接收一个可变引用到文件
     pub fn collect_and_generate_cypher(

@@ -1,5 +1,4 @@
 use serde::Deserialize;
-use std::collections::HashMap;
 use std::io::Read;
 
 use crate::tree_node::TreeNode;
@@ -13,34 +12,48 @@ pub struct CsvNode {
 
 pub fn build_tree_from_csv<R: Read>(reader: R) -> Option<TreeNode> {
     let mut rdr = csv::Reader::from_reader(reader);
-    let mut node_map = HashMap::new();
-    let mut children_map: HashMap<String, Vec<TreeNode>> = HashMap::new();
+    let mut tree_nodes=vec![];
 
-    // Read CSV file and build a map of CsvNodes
+    // Read CSV file and populate nodes and parentage
     for result in rdr.deserialize() {
         let record: CsvNode = result.expect("CSV parsing error");
         let node = TreeNode {
             name: record.name.clone(),
             attribute: record.attribute,
-            children: vec![],
+            parent: match record.parent {
+                Some(p) => Some(p.to_string()),
+                None =>None,
+            },
+            children: Vec::new(),
         };
-        // Initialize the children vector for each node
-        children_map.entry(record.name.clone()).or_insert(vec![]);
-        if let Some(parent) = record.parent {
-            children_map.entry(parent).or_insert(vec![]).push(node);
-        } else {
-            // This node is the root node
-            node_map.insert(record.name.clone(), node);
-        }
+        tree_nodes.push(node);
+    }
+    let root=build_tree(tree_nodes);
+    root
+ }
+
+
+ pub fn build_tree(nodes: Vec<TreeNode>) -> Option<TreeNode> {
+    use std::collections::HashMap;
+
+    // Create a HashMap to group all nodes by their parent
+    let mut map: HashMap<Option<String>, Vec<TreeNode>> = HashMap::new();
+    for node in nodes {
+        map.entry(node.parent.clone())
+            .or_default()
+            .push(TreeNode { children: vec![], ..node });
     }
 
-    // Now build the TreeNode structure
-    for (name, mut node) in node_map.iter_mut() {
-        if let Some(children) = children_map.remove(name) {
-            node.children = children;
-        }
+    // Recursively build the tree
+    fn build_subtree(map: &HashMap<Option<String>, Vec<TreeNode>>, parent_name: Option<String>) -> Vec<TreeNode> {
+        map.get(&parent_name).map_or_else(Vec::new, |nodes| {
+            nodes.iter().map(|node| {
+                let mut new_node = node.clone(); // Clone basic info
+                new_node.children = build_subtree(map, Some(node.name.clone())); // Recursively build children
+                new_node
+            }).collect() // Collect all child nodes into a Vec<TreeNode>
+        })
     }
-
-    // Assuming there is only one root node
-    node_map.into_iter().next().map(|(_, node)| node)
+    // Build the root node where the parent is None
+    build_subtree(&map, None).into_iter().next()
 }
